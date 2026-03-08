@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import configparser
+import logging
 from pathlib import Path, PureWindowsPath
 from typing import TYPE_CHECKING
 
@@ -10,6 +11,8 @@ from pyrsistencesniper.plugins.base import CheckDefinition, PersistencePlugin
 
 if TYPE_CHECKING:
     from pyrsistencesniper.models.finding import Finding
+
+logger = logging.getLogger(__name__)
 
 _GP_DIR = Path("Windows") / "System32" / "GroupPolicy"
 _SCRIPT_FILES: tuple[tuple[Path, str], ...] = (
@@ -65,14 +68,27 @@ class GpScripts(PersistencePlugin):
                 config.read(str(ini_path), encoding=encoding)
                 break
             except Exception:
+                logger.debug(
+                    "Failed to read INI with %s encoding: %s",
+                    encoding,
+                    ini_path,
+                    exc_info=True,
+                )
                 config.clear()
         else:
+            logger.debug("All encoding attempts failed for INI file: %s", ini_path)
             return
 
         for section in config.sections():
             try:
                 items = list(config.items(section))
             except Exception:
+                logger.debug(
+                    "Failed to read INI section %s: %s",
+                    section,
+                    ini_path,
+                    exc_info=True,
+                )
                 continue
 
             mapping = {k.lower(): v for k, v in items}

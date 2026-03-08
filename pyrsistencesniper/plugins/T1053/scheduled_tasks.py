@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path, PureWindowsPath
 from typing import TYPE_CHECKING
 
@@ -11,6 +12,8 @@ from pyrsistencesniper.plugins.base import CheckDefinition, PersistencePlugin
 
 if TYPE_CHECKING:
     from pyrsistencesniper.models.finding import Finding
+
+logger = logging.getLogger(__name__)
 
 _TASKS_DIR = r"Windows\System32\Tasks"
 _MAX_DEPTH = 50
@@ -62,6 +65,11 @@ class ScheduledTaskFiles(PersistencePlugin):
         try:
             entries = list(directory.iterdir())
         except PermissionError:
+            logger.debug(
+                "Permission denied reading directory: %s",
+                directory,
+                exc_info=True,
+            )
             return
 
         for entry in entries:
@@ -79,6 +87,7 @@ class ScheduledTaskFiles(PersistencePlugin):
         try:
             tree = ET.parse(path)
         except Exception:
+            logger.debug("Failed to parse task XML: %s", path, exc_info=True)
             return
 
         root = tree.getroot()

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from pathlib import PureWindowsPath
 from typing import TYPE_CHECKING
 
@@ -9,6 +10,8 @@ from pyrsistencesniper.plugins.base import CheckDefinition, PersistencePlugin
 
 if TYPE_CHECKING:
     from pyrsistencesniper.models.finding import Finding
+
+logger = logging.getLogger(__name__)
 
 
 @register_plugin
@@ -45,6 +48,11 @@ class PowerAutomate(PersistencePlugin):
             try:
                 entries = list(flows_dir.iterdir())
             except PermissionError:
+                logger.debug(
+                    "Permission denied reading flows directory: %s",
+                    flows_dir,
+                    exc_info=True,
+                )
                 continue
 
             for entry in entries:

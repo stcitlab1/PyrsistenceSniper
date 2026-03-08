@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from typing import TYPE_CHECKING
 
 from pyrsistencesniper.core.normalize import normalize_windows_path
@@ -10,6 +11,8 @@ from pyrsistencesniper.plugins.base import CheckDefinition, PersistencePlugin
 
 if TYPE_CHECKING:
     from pyrsistencesniper.models.finding import Finding
+
+logger = logging.getLogger(__name__)
 
 
 @register_plugin
@@ -42,6 +45,11 @@ class WindowsTerminal(PersistencePlugin):
             try:
                 data = json.loads(host_path.read_text(encoding="utf-8-sig"))
             except Exception:
+                logger.debug(
+                    "Failed to parse Windows Terminal settings: %s",
+                    host_path,
+                    exc_info=True,
+                )
                 continue
 
             profiles_list = data.get("profiles", {}).get("list", [])

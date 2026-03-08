@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import struct
 from typing import TYPE_CHECKING
 
@@ -9,6 +10,8 @@ from pyrsistencesniper.plugins.base import CheckDefinition, PersistencePlugin
 
 if TYPE_CHECKING:
     from pyrsistencesniper.models.finding import Finding
+
+logger = logging.getLogger(__name__)
 
 _USERS_PATH = r"SAM\Domains\Account\Users"
 
@@ -43,6 +46,7 @@ class RidHijacking(PersistencePlugin):
             try:
                 actual_rid = int(rid_hex, 16)
             except ValueError:
+                logger.debug("Invalid RID hex value: %s", rid_hex, exc_info=True)
                 continue
 
             f_value = node.get("F")
@@ -54,6 +58,11 @@ class RidHijacking(PersistencePlugin):
             try:
                 f_rid = struct.unpack_from("<I", f_value, 0x30)[0]
             except struct.error:
+                logger.debug(
+                    "Failed to unpack F value for RID %s",
+                    rid_hex,
+                    exc_info=True,
+                )
                 continue
 
             if f_rid != actual_rid:
@@ -106,11 +115,17 @@ class RidSuborner(PersistencePlugin):
             try:
                 f_rid = struct.unpack_from("<I", f_value, 0x30)[0]
             except struct.error:
+                logger.debug(
+                    "Failed to unpack F value for RID %s",
+                    rid_hex,
+                    exc_info=True,
+                )
                 continue
 
             try:
                 actual_rid = int(rid_hex, 16)
             except ValueError:
+                logger.debug("Invalid RID hex value: %s", rid_hex, exc_info=True)
                 continue
 
             if f_rid == 500 and actual_rid != 500:

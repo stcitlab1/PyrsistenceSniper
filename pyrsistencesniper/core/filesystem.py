@@ -24,7 +24,12 @@ class FilesystemHelper:
         canonical = canonicalize_windows_path(windows_path)
         if not canonical:
             return self._root
-        return self._root / PureWindowsPath(canonical)
+        joined = (self._root / PureWindowsPath(canonical)).resolve()
+        root = self._root.resolve()
+        if not joined.is_relative_to(root):
+            logger.warning("Path escapes image root, ignoring: %s", windows_path)
+            return self._root
+        return joined
 
     def exists(self, windows_path: str) -> bool:
         """Return True if the resolved path points to an existing file."""

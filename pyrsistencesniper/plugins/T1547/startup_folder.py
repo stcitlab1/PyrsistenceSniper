@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path, PureWindowsPath
 from typing import TYPE_CHECKING
 
@@ -10,6 +11,8 @@ from pyrsistencesniper.plugins.base import CheckDefinition, PersistencePlugin
 
 if TYPE_CHECKING:
     from pyrsistencesniper.models.finding import Finding
+
+logger = logging.getLogger(__name__)
 
 _SHELL_FOLDERS_KEY = r"Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
 _USER_SHELL_FOLDERS_KEY = (
@@ -99,6 +102,7 @@ class StartupFolder(PersistencePlugin):
         try:
             entries = list(folder.iterdir())
         except PermissionError:
+            logger.debug("Permission denied reading folder: %s", folder, exc_info=True)
             return
         for entry in entries:
             if entry.is_file() and entry.name.lower() != "desktop.ini":
@@ -107,6 +111,11 @@ class StartupFolder(PersistencePlugin):
                         PureWindowsPath(entry.relative_to(self.filesystem.image_root))
                     )
                 except ValueError:
+                    logger.debug(
+                        "Path not relative to image root: %s",
+                        entry,
+                        exc_info=True,
+                    )
                     rel = str(entry)
                 findings.append(
                     self._make_finding(

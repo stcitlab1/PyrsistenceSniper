@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import logging
 import re
+from pathlib import Path as _Path
+from pathlib import PureWindowsPath
 from typing import TYPE_CHECKING
 
 from pyrsistencesniper.models.finding import AccessLevel
@@ -10,8 +13,7 @@ from pyrsistencesniper.plugins.base import CheckDefinition, PersistencePlugin
 if TYPE_CHECKING:
     from pyrsistencesniper.models.finding import Finding
 
-from pathlib import Path as _Path
-from pathlib import PureWindowsPath
+logger = logging.getLogger(__name__)
 
 _CIM_PATHS: tuple[_Path, ...] = (
     _Path("Windows") / "System32" / "wbem" / "Repository" / "OBJECTS.DATA",
@@ -82,6 +84,11 @@ class WmiEventSubscription(PersistencePlugin):
             try:
                 data = cim_path.read_bytes()
             except Exception:
+                logger.debug(
+                    "Failed to read WMI repository: %s",
+                    cim_path,
+                    exc_info=True,
+                )
                 continue
 
             for pattern, encoding, consumer_type, truncate in _PATTERNS:
@@ -110,6 +117,7 @@ class WmiEventSubscription(PersistencePlugin):
                     text = text.rstrip("\x00")
                 text = text.strip()
             except Exception:
+                logger.debug("Failed to decode WMI data: %s", cim_rel, exc_info=True)
                 continue
             if text:
                 if truncate and len(text) > truncate:
