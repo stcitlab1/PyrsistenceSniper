@@ -36,6 +36,7 @@ class RegistryTarget:
     path: str = ""
     values: str = "*"
     scope: HiveScope = HiveScope.BOTH
+    recurse: bool = False
 
 
 @dataclass(frozen=True, slots=True)

@@ -1,6 +1,6 @@
 [project]
 name = "pyrsistencesniper"
-version = "0.4.0"
+version = "0.4.1"
 description = ""
 authors = [
     {name = "Maurice Fielenbach",email = "info@hexastrike.com"}
@@ -109,7 +109,7 @@ exclude_lines = [
     "@overload",
 ]
 show_missing = true
-fail_under = 0
+fail_under = 80
 
 [dependency-groups]
 dev = [
@@ -117,5 +117,6 @@ dev = [
     "pytest-cov (>=7.0.0,<8.0.0)",
     "mypy (>=1.19.1,<2.0.0)",
     "ruff (>=0.15.2,<0.16.0)",
-    "types-pyyaml (>=6.0.12.20250915,<7.0.0.0)"
+    "types-pyyaml (>=6.0.12.20250915,<7.0.0.0)",
+    "pre-commit (>=4.5.1,<5.0.0)"
 ]

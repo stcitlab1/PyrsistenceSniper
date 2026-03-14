@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import MagicMock
 
 from pyrsistencesniper.models.finding import AccessLevel
 from pyrsistencesniper.plugins.T1547.terminal_services import (
@@ -11,7 +10,7 @@ from pyrsistencesniper.plugins.T1547.terminal_services import (
     TsInitialProgram,
 )
 
-from .conftest import make_node, make_plugin
+from .conftest import make_node, make_plugin, setup_hklm
 
 
 class TestTsInitialProgram:
@@ -22,10 +21,7 @@ class TestTsInitialProgram:
         node = make_node(values={"InitialProgram": r"C:\backdoor.exe"})
 
         p = make_plugin(TsInitialProgram, tmp_path)
-        p.context.hive_path.return_value = Path("/fake/SOFTWARE")
-        hive = MagicMock()
-        p.registry.open_hive.return_value = hive
-        p.registry.load_subtree.return_value = node
+        setup_hklm(p, node)
 
         findings = p.run()
         assert any("backdoor.exe" in f.value for f in findings)
@@ -40,10 +36,7 @@ class TestRdpWdsStartupPrograms:
         node = make_node(values={"StartupPrograms": "evil_clip"})
 
         p = make_plugin(RdpWdsStartupPrograms, tmp_path)
-        p.context.hive_path.return_value = Path("/fake/SYSTEM")
-        hive = MagicMock()
-        p.registry.open_hive.return_value = hive
-        p.registry.load_subtree.return_value = node
+        setup_hklm(p, node, hive_path="/fake/SYSTEM")
 
         findings = p.run()
         assert len(findings) == 1
@@ -58,10 +51,7 @@ class TestRdpClxDll:
         node = make_node(values={"ClxDllPath": r"C:\evil\clx.dll"})
 
         p = make_plugin(RdpClxDll, tmp_path)
-        p.context.hive_path.return_value = Path("/fake/SYSTEM")
-        hive = MagicMock()
-        p.registry.open_hive.return_value = hive
-        p.registry.load_subtree.return_value = node
+        setup_hklm(p, node, hive_path="/fake/SYSTEM")
 
         findings = p.run()
         assert len(findings) == 1
@@ -77,10 +67,7 @@ class TestRdpVirtualChannel:
         tree = make_node(children={"MyAddin": addin_node})
 
         p = make_plugin(RdpVirtualChannel, tmp_path)
-        p.context.hive_path.return_value = Path("/fake/SOFTWARE")
-        hive = MagicMock()
-        p.registry.open_hive.return_value = hive
-        p.registry.load_subtree.return_value = tree
+        setup_hklm(p, tree)
 
         findings = p.run()
         assert len(findings) == 1
@@ -93,9 +80,6 @@ class TestRdpVirtualChannel:
         tree = make_node(children={"EmptyAddin": addin_node})
 
         p = make_plugin(RdpVirtualChannel, tmp_path)
-        p.context.hive_path.return_value = Path("/fake/SOFTWARE")
-        hive = MagicMock()
-        p.registry.open_hive.return_value = hive
-        p.registry.load_subtree.return_value = tree
+        setup_hklm(p, tree)
 
         assert p.run() == []

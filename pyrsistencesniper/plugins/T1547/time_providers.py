@@ -1,10 +1,13 @@
 from __future__ import annotations
 
-from pyrsistencesniper.models.finding import AccessLevel, FilterRule, Finding
+from pyrsistencesniper.models.finding import FilterRule
 from pyrsistencesniper.plugins import register_plugin
-from pyrsistencesniper.plugins.base import CheckDefinition, PersistencePlugin
-
-_TIME_PROVIDERS_PATH_TEMPLATE = r"{controlset}\Services\W32Time\TimeProviders"
+from pyrsistencesniper.plugins.base import (
+    CheckDefinition,
+    HiveScope,
+    PersistencePlugin,
+    RegistryTarget,
+)
 
 
 @register_plugin
@@ -32,28 +35,12 @@ class TimeProviders(PersistencePlugin):
                 signer="microsoft",
             ),
         ),
+        targets=(
+            RegistryTarget(
+                path=r"SYSTEM\{controlset}\Services\W32Time\TimeProviders",
+                values="DllName",
+                scope=HiveScope.HKLM,
+                recurse=True,
+            ),
+        ),
     )
-
-    def run(self) -> list[Finding]:
-        findings: list[Finding] = []
-
-        tp_path = _TIME_PROVIDERS_PATH_TEMPLATE.replace(
-            "{controlset}", self.context.active_controlset
-        )
-        tree = self._load_subtree("SYSTEM", tp_path)
-        if tree is None:
-            return findings
-
-        for provider_name, node in tree.children():
-            value_str = self._to_str(node.get("DllName"))
-            if value_str is None:
-                continue
-            findings.append(
-                self._make_finding(
-                    path=(f"HKLM\\SYSTEM\\{tp_path}\\{provider_name}\\DllName"),
-                    value=value_str,
-                    access=AccessLevel.SYSTEM,
-                )
-            )
-
-        return findings

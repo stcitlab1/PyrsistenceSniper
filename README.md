@@ -318,15 +318,6 @@ We kept writing one-off scripts to cover the gaps, and at some point it made mor
 
 ---
 
-## 🗺️ Roadmap
-
-- BITS jobs — parse modern `qmgr.db` ESE database (not only legacy `.dat` files)
-- SCM security descriptors — analyze DACL ACEs for weakened service permissions
-- VirusTotal enrichment for discovered artifacts
-- Improved HTML reports with filtering and sorting
-
----
-
 ## 🙏 Credits
 
 - [PersistenceSniper](https://github.com/last-byte/PersistenceSniper) by Federico Lagrasta

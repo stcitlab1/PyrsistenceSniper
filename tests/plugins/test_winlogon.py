@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import MagicMock
 
 from pyrsistencesniper.models.finding import AccessLevel
 from pyrsistencesniper.plugins.T1547.winlogon import (
@@ -11,7 +10,7 @@ from pyrsistencesniper.plugins.T1547.winlogon import (
     WinlogonUserinit,
 )
 
-from .conftest import make_node, make_plugin
+from .conftest import make_node, make_plugin, setup_hklm
 
 
 class TestWinlogonShell:
@@ -22,10 +21,7 @@ class TestWinlogonShell:
         node = make_node(values={"Shell": r"C:\evil\shell.exe"})
 
         p = make_plugin(WinlogonShell, tmp_path)
-        p.context.hive_path.return_value = Path("/fake/SOFTWARE")
-        hive = MagicMock()
-        p.registry.open_hive.return_value = hive
-        p.registry.load_subtree.return_value = node
+        setup_hklm(p, node)
 
         findings = p.run()
         assert len(findings) >= 1
@@ -40,10 +36,7 @@ class TestWinlogonShell:
         node = make_node(values={"Shell": "explorer.exe"})
 
         p = make_plugin(WinlogonShell, tmp_path)
-        p.context.hive_path.return_value = Path("/fake/SOFTWARE")
-        hive = MagicMock()
-        p.registry.open_hive.return_value = hive
-        p.registry.load_subtree.return_value = node
+        setup_hklm(p, node)
 
         findings = p.run()
         assert len(findings) >= 1
@@ -58,10 +51,7 @@ class TestWinlogonUserinit:
         node = make_node(values={"Userinit": r"C:\evil\init.exe,"})
 
         p = make_plugin(WinlogonUserinit, tmp_path)
-        p.context.hive_path.return_value = Path("/fake/SOFTWARE")
-        hive = MagicMock()
-        p.registry.open_hive.return_value = hive
-        p.registry.load_subtree.return_value = node
+        setup_hklm(p, node)
 
         findings = p.run()
         assert len(findings) >= 1
@@ -76,10 +66,7 @@ class TestWinlogonMPNotify:
         node = make_node(values={"mpnotify": r"C:\evil\notify.dll"})
 
         p = make_plugin(WinlogonMPNotify, tmp_path)
-        p.context.hive_path.return_value = Path("/fake/SOFTWARE")
-        hive = MagicMock()
-        p.registry.open_hive.return_value = hive
-        p.registry.load_subtree.return_value = node
+        setup_hklm(p, node)
 
         findings = p.run()
         assert len(findings) == 1
@@ -94,10 +81,7 @@ class TestWinlogonNotifyPackages:
         node = make_node(values={"Notification Packages": "evilpkg"})
 
         p = make_plugin(WinlogonNotifyPackages, tmp_path)
-        p.context.hive_path.return_value = Path("/fake/SYSTEM")
-        hive = MagicMock()
-        p.registry.open_hive.return_value = hive
-        p.registry.load_subtree.return_value = node
+        setup_hklm(p, node, hive_path="/fake/SYSTEM")
 
         findings = p.run()
         assert len(findings) == 1

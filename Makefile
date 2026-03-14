@@ -1,6 +1,6 @@
-.PHONY: all test lint format typecheck fix cov
+.PHONY: all
 
-all: lint typecheck format fix test
+all: fix typecheck test
 
 test:
 	poetry run pytest
@@ -15,8 +15,8 @@ typecheck:
 	poetry run mypy --strict pyrsistencesniper/
 
 fix:
-	poetry run ruff check --fix pyrsistencesniper/ tests/
 	poetry run ruff format pyrsistencesniper/ tests/
+	poetry run ruff check --fix pyrsistencesniper/ tests/
 
 cov:
 	poetry run pytest --cov=pyrsistencesniper --cov-report=term-missing

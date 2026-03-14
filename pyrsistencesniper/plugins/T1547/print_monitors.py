@@ -1,17 +1,12 @@
 from __future__ import annotations
 
-from pyrsistencesniper.models.finding import AccessLevel, FilterRule, Finding
+from pyrsistencesniper.models.finding import FilterRule
 from pyrsistencesniper.plugins import register_plugin
-from pyrsistencesniper.plugins.base import CheckDefinition, PersistencePlugin
-
-_MONITORS_PATH_TEMPLATE = r"{controlset}\Control\Print\Monitors"
-_PROCESSORS_X64_TEMPLATE = (
-    r"{controlset}\Control\Print\Environments"
-    r"\Windows x64\Print Processors"
-)
-_PROCESSORS_X86_TEMPLATE = (
-    r"{controlset}\Control\Print\Environments"
-    r"\Windows NT x86\Print Processors"
+from pyrsistencesniper.plugins.base import (
+    CheckDefinition,
+    HiveScope,
+    PersistencePlugin,
+    RegistryTarget,
 )
 
 
@@ -38,31 +33,15 @@ class PrintMonitors(PersistencePlugin):
                 signer="microsoft",
             ),
         ),
+        targets=(
+            RegistryTarget(
+                path=r"SYSTEM\{controlset}\Control\Print\Monitors",
+                values="Driver",
+                scope=HiveScope.HKLM,
+                recurse=True,
+            ),
+        ),
     )
-
-    def run(self) -> list[Finding]:
-        findings: list[Finding] = []
-
-        monitors_path = _MONITORS_PATH_TEMPLATE.replace(
-            "{controlset}", self.context.active_controlset
-        )
-        tree = self._load_subtree("SYSTEM", monitors_path)
-        if tree is None:
-            return findings
-
-        for monitor_name, node in tree.children():
-            value_str = self._to_str(node.get("Driver"))
-            if value_str is None:
-                continue
-            findings.append(
-                self._make_finding(
-                    path=(f"HKLM\\SYSTEM\\{monitors_path}\\{monitor_name}\\Driver"),
-                    value=value_str,
-                    access=AccessLevel.SYSTEM,
-                )
-            )
-
-        return findings
 
 
 @register_plugin
@@ -85,28 +64,24 @@ class PrintProcessors(PersistencePlugin):
                 signer="microsoft",
             ),
         ),
+        targets=(
+            RegistryTarget(
+                path=(
+                    r"SYSTEM\{controlset}\Control\Print"
+                    r"\Environments\Windows x64\Print Processors"
+                ),
+                values="Driver",
+                scope=HiveScope.HKLM,
+                recurse=True,
+            ),
+            RegistryTarget(
+                path=(
+                    r"SYSTEM\{controlset}\Control\Print\Environments"
+                    r"\Windows NT x86\Print Processors"
+                ),
+                values="Driver",
+                scope=HiveScope.HKLM,
+                recurse=True,
+            ),
+        ),
     )
-
-    def run(self) -> list[Finding]:
-        findings: list[Finding] = []
-        cs = self.context.active_controlset
-
-        for template in (_PROCESSORS_X64_TEMPLATE, _PROCESSORS_X86_TEMPLATE):
-            proc_path = template.replace("{controlset}", cs)
-            tree = self._load_subtree("SYSTEM", proc_path)
-            if tree is None:
-                continue
-
-            for proc_name, node in tree.children():
-                value_str = self._to_str(node.get("Driver"))
-                if value_str is None:
-                    continue
-                findings.append(
-                    self._make_finding(
-                        path=(f"HKLM\\SYSTEM\\{proc_path}\\{proc_name}\\Driver"),
-                        value=value_str,
-                        access=AccessLevel.SYSTEM,
-                    )
-                )
-
-        return findings

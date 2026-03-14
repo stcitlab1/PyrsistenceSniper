@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, PropertyMock
 
 from pyrsistencesniper.plugins.T1547.shell_folders import ShellFoldersStartup
 
-from .conftest import make_deps, make_node
+from .conftest import make_deps, make_node, setup_hklm
 
 
 def _make_plugin(tmp_path: Path) -> ShellFoldersStartup:
@@ -19,9 +19,7 @@ def test_default_path_no_redirect_finding(tmp_path: Path) -> None:
     node = make_node(name="ShellFolders", values={"Common Startup": default_path})
 
     plugin = _make_plugin(tmp_path)
-    plugin.context.hive_path.return_value = Path("/fake/SOFTWARE")  # type: ignore[union-attr]
-    plugin.registry.open_hive.return_value = MagicMock()  # type: ignore[union-attr]
-    plugin.registry.load_subtree.return_value = node  # type: ignore[union-attr]
+    setup_hklm(plugin, node)
     type(plugin.context).user_profiles = PropertyMock(return_value=[])  # type: ignore[union-attr]
 
     findings = plugin.run()
@@ -34,9 +32,7 @@ def test_nondefault_path_redirect_detected(tmp_path: Path) -> None:
     node = make_node(name="ShellFolders", values={"Common Startup": evil_path})
 
     plugin = _make_plugin(tmp_path)
-    plugin.context.hive_path.return_value = Path("/fake/SOFTWARE")  # type: ignore[union-attr]
-    plugin.registry.open_hive.return_value = MagicMock()  # type: ignore[union-attr]
-    plugin.registry.load_subtree.return_value = node  # type: ignore[union-attr]
+    setup_hklm(plugin, node)
     type(plugin.context).user_profiles = PropertyMock(return_value=[])  # type: ignore[union-attr]
 
     findings = plugin.run()
@@ -80,9 +76,7 @@ def test_env_var_path_redirected(tmp_path: Path) -> None:
     node = make_node(name="ShellFolders", values={"Common Startup": evil_path})
 
     plugin = _make_plugin(tmp_path)
-    plugin.context.hive_path.return_value = Path("/fake/SOFTWARE")  # type: ignore[union-attr]
-    plugin.registry.open_hive.return_value = MagicMock()  # type: ignore[union-attr]
-    plugin.registry.load_subtree.return_value = node  # type: ignore[union-attr]
+    setup_hklm(plugin, node)
     type(plugin.context).user_profiles = PropertyMock(return_value=[])  # type: ignore[union-attr]
 
     findings = plugin.run()

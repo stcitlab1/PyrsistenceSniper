@@ -1,0 +1,31 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.6
+    hooks:
+      - id: ruff-format
+        args: [pyrsistencesniper/, tests/]
+        pass_filenames: false
+      - id: ruff
+        args: [--fix, pyrsistencesniper/, tests/]
+        pass_filenames: false
+      - id: ruff
+        alias: ruff-strict
+        name: ruff check (strict)
+        args: [pyrsistencesniper/, tests/]
+        pass_filenames: false
+
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy --strict
+        entry: poetry run mypy --strict pyrsistencesniper/
+        language: system
+        pass_filenames: false
+        types: [python]
+
+      - id: pytest-cov
+        name: pytest + coverage
+        entry: poetry run pytest --cov=pyrsistencesniper --cov-report=term-missing
+        language: system
+        pass_filenames: false
+        always_run: true

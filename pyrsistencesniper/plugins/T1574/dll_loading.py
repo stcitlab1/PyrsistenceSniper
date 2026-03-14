@@ -465,9 +465,6 @@ class Mapi32DllPath(PersistencePlugin):
     )
 
 
-_GP_EXTENSIONS_PATH = r"Microsoft\Windows NT\CurrentVersion\Winlogon\GPExtensions"
-
-
 @register_plugin
 class GpExtensionDlls(PersistencePlugin):
     definition = CheckDefinition(
@@ -497,29 +494,18 @@ class GpExtensionDlls(PersistencePlugin):
                 ),
             ),
         ),
+        targets=(
+            RegistryTarget(
+                path=(
+                    r"SOFTWARE\Microsoft\Windows NT"
+                    r"\CurrentVersion\Winlogon\GPExtensions"
+                ),
+                values="DllName",
+                scope=HiveScope.HKLM,
+                recurse=True,
+            ),
+        ),
     )
-
-    def run(self) -> list[Finding]:
-        findings: list[Finding] = []
-
-        tree = self._load_subtree("SOFTWARE", _GP_EXTENSIONS_PATH)
-        if tree is None:
-            return findings
-
-        for ext, node in tree.children():
-            value_str = self._to_str(node.get("DllName"))
-            if value_str is None:
-                continue
-
-            findings.append(
-                self._make_finding(
-                    path=f"HKLM\\SOFTWARE\\{_GP_EXTENSIONS_PATH}\\{ext}\\DllName",
-                    value=value_str,
-                    access=AccessLevel.SYSTEM,
-                )
-            )
-
-        return findings
 
 
 @register_plugin
@@ -541,30 +527,12 @@ class WinsockAutoProxy(PersistencePlugin):
                 signer="microsoft",
             ),
         ),
+        targets=(
+            RegistryTarget(
+                path=r"SYSTEM\{controlset}\Services\WinSock2\Parameters\NameSpace_Catalog5\Catalog_Entries",
+                values="LibraryPath",
+                scope=HiveScope.HKLM,
+                recurse=True,
+            ),
+        ),
     )
-
-    def run(self) -> list[Finding]:
-        findings: list[Finding] = []
-
-        cs = self.context.active_controlset
-        ns_path = (
-            f"{cs}\\Services\\WinSock2\\Parameters\\NameSpace_Catalog5\\Catalog_Entries"
-        )
-        tree = self._load_subtree("SYSTEM", ns_path)
-        if tree is None:
-            return findings
-
-        for entry, node in tree.children():
-            value_str = self._to_str(node.get("LibraryPath"))
-            if value_str is None:
-                continue
-
-            findings.append(
-                self._make_finding(
-                    path=f"HKLM\\{ns_path}\\{entry}\\LibraryPath",
-                    value=value_str,
-                    access=AccessLevel.SYSTEM,
-                )
-            )
-
-        return findings

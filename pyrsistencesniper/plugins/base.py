@@ -136,9 +136,14 @@ class PersistencePlugin:
         findings: list[Finding] = []
         for target in self.definition.targets:
             for hive, key_path, canonical_prefix in self._iter_hive_contexts(target):
-                self._collect_findings_from_node(
-                    hive, key_path, canonical_prefix, target.values, findings
-                )
+                if target.recurse:
+                    self._collect_findings_from_children(
+                        hive, key_path, canonical_prefix, target.values, findings
+                    )
+                else:
+                    self._collect_findings_from_node(
+                        hive, key_path, canonical_prefix, target.values, findings
+                    )
         return findings
 
     def _collect_findings_from_node(
@@ -167,6 +172,34 @@ class PersistencePlugin:
                         access=access_level,
                     )
                 )
+
+    def _collect_findings_from_children(
+        self,
+        hive: HiveProtocol,
+        key_path: str,
+        canonical_prefix: str,
+        value_name: str,
+        findings: list[Finding],
+    ) -> None:
+        """Iterate child subkeys and read a named value from each."""
+        tree = self.registry.load_subtree(hive, key_path)
+        if tree is None:
+            return
+        access = (
+            AccessLevel.SYSTEM
+            if canonical_prefix.startswith("HKLM")
+            else AccessLevel.USER
+        )
+        for child_name, child_node in tree.children():
+            value_str = self._to_str(child_node.get(value_name))
+            if value_str is None:
+                continue
+            registry_path = (
+                f"{canonical_prefix}\\{key_path}\\{child_name}\\{value_name}"
+            )
+            findings.append(
+                self._make_finding(path=registry_path, value=value_str, access=access)
+            )
 
     @staticmethod
     def _flatten_registry_value(raw_value: object) -> list[str]:

@@ -267,3 +267,124 @@ def test_multi_value_string_filters_blanks() -> None:
     findings = plugin.run()
     assert len(findings) == 1
     assert findings[0].value == "real.dll"
+
+
+# -- recurse flag -------------------------------------------------------------
+
+
+def test_recurse_reads_child_values() -> None:
+    target = RegistryTarget(
+        path=r"SYSTEM\Services\Providers",
+        values="Driver",
+        scope=HiveScope.HKLM,
+        recurse=True,
+    )
+    child_a = _node({"Driver": "a.dll"}, children={})
+    child_b = _node({"Driver": "b.dll"}, children={})
+    tree = _node({}, children={"ChildA": child_a, "ChildB": child_b})
+    plugin = _make_plugin((target,))
+
+    plugin.context.hive_path.return_value = Path("/fake/SYSTEM")
+    plugin.registry.open_hive.return_value = MagicMock()
+    plugin.registry.load_subtree.return_value = tree
+
+    findings = plugin.run()
+    assert len(findings) == 2
+    assert {f.value for f in findings} == {"a.dll", "b.dll"}
+    assert all(f.access_gained == AccessLevel.SYSTEM for f in findings)
+
+
+def test_recurse_skips_children_without_target_value() -> None:
+    target = RegistryTarget(
+        path=r"SYSTEM\Services\Providers",
+        values="Driver",
+        scope=HiveScope.HKLM,
+        recurse=True,
+    )
+    child = _node({"OtherValue": "irrelevant"}, children={})
+    tree = _node({}, children={"Child": child})
+    plugin = _make_plugin((target,))
+
+    plugin.context.hive_path.return_value = Path("/fake/SYSTEM")
+    plugin.registry.open_hive.return_value = MagicMock()
+    plugin.registry.load_subtree.return_value = tree
+
+    assert plugin.run() == []
+
+
+def test_recurse_empty_subtree() -> None:
+    target = RegistryTarget(
+        path=r"SYSTEM\Services\Providers",
+        values="Driver",
+        scope=HiveScope.HKLM,
+        recurse=True,
+    )
+    tree = _node({}, children={})
+    plugin = _make_plugin((target,))
+
+    plugin.context.hive_path.return_value = Path("/fake/SYSTEM")
+    plugin.registry.open_hive.return_value = MagicMock()
+    plugin.registry.load_subtree.return_value = tree
+
+    assert plugin.run() == []
+
+
+def test_recurse_missing_key_returns_empty() -> None:
+    target = RegistryTarget(
+        path=r"SYSTEM\Services\Providers",
+        values="Driver",
+        scope=HiveScope.HKLM,
+        recurse=True,
+    )
+    plugin = _make_plugin((target,))
+
+    plugin.context.hive_path.return_value = Path("/fake/SYSTEM")
+    plugin.registry.open_hive.return_value = MagicMock()
+    plugin.registry.load_subtree.return_value = None
+
+    assert plugin.run() == []
+
+
+def test_recurse_path_includes_child_name() -> None:
+    target = RegistryTarget(
+        path=r"SYSTEM\Services\Providers",
+        values="DllName",
+        scope=HiveScope.HKLM,
+        recurse=True,
+    )
+    child = _node({"DllName": "test.dll"}, children={})
+    tree = _node({}, children={"MyProvider": child})
+    plugin = _make_plugin((target,))
+
+    plugin.context.hive_path.return_value = Path("/fake/SYSTEM")
+    plugin.registry.open_hive.return_value = MagicMock()
+    plugin.registry.load_subtree.return_value = tree
+
+    findings = plugin.run()
+    assert len(findings) == 1
+    assert r"Services\Providers\test\DllName" in findings[0].path
+    assert findings[0].path.startswith("HKLM\\SYSTEM")
+
+
+def test_recurse_with_controlset() -> None:
+    target = RegistryTarget(
+        path=r"SYSTEM\{controlset}\Services\Providers",
+        values="DllName",
+        scope=HiveScope.HKLM,
+        recurse=True,
+    )
+    child = _node({"DllName": "tp.dll"}, children={})
+    tree = _node({}, children={"Provider1": child})
+    plugin = _make_plugin((target,), controlset="ControlSet002")
+
+    plugin.context.hive_path.return_value = Path("/fake/SYSTEM")
+    hive = MagicMock()
+    plugin.registry.open_hive.return_value = hive
+    plugin.registry.load_subtree.return_value = tree
+
+    findings = plugin.run()
+    assert len(findings) == 1
+    assert "ControlSet002" in findings[0].path
+    plugin.registry.load_subtree.assert_called_once_with(
+        hive, r"ControlSet002\Services\Providers"
+    )

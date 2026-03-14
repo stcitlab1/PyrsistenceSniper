@@ -3,22 +3,18 @@
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import MagicMock
 
 from pyrsistencesniper.models.finding import AccessLevel
 from pyrsistencesniper.plugins.T1574.dotnet_startup_hooks import DotNetStartupHooks
 
-from .conftest import make_node, make_plugin
+from .conftest import make_node, make_plugin, setup_hklm
 
 
 def test_system_env_hook_detected(tmp_path: Path) -> None:
     """DOTNET_STARTUP_HOOKS in SYSTEM environment produces a SYSTEM finding."""
     env_node = make_node(values={"DOTNET_STARTUP_HOOKS": r"C:\evil_hook.dll"})
     p = make_plugin(DotNetStartupHooks, tmp_path)
-    p.context.hive_path.return_value = Path("/fake/SYSTEM")
-    hive = MagicMock()
-    p.registry.open_hive.return_value = hive
-    p.registry.load_subtree.return_value = env_node
+    setup_hklm(p, env_node, hive_path="/fake/SYSTEM")
     findings = p.run()
     assert len(findings) >= 1
     assert any("evil_hook.dll" in f.value for f in findings)
@@ -30,9 +26,6 @@ def test_env_key_without_hook_value(tmp_path: Path) -> None:
     """Environment key exists but DOTNET_STARTUP_HOOKS is absent -- no findings."""
     env_node = make_node(values={"PATH": r"C:\Windows"})
     p = make_plugin(DotNetStartupHooks, tmp_path)
-    p.context.hive_path.return_value = Path("/fake/SYSTEM")
-    hive = MagicMock()
-    p.registry.open_hive.return_value = hive
-    p.registry.load_subtree.return_value = env_node
+    setup_hklm(p, env_node, hive_path="/fake/SYSTEM")
     findings = p.run()
     assert findings == []
