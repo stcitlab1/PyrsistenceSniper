@@ -44,6 +44,11 @@ class WindowsServiceImagePath(PersistencePlugin):
                 signer="microsoft",
                 not_lolbin=True,
             ),
+            FilterRule(
+                reason="Default Windows Installer service",
+                value_matches=r"msiexec\.exe",
+                signer="microsoft",
+            ),
         ),
     )
 

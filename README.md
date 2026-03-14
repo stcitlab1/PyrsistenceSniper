@@ -12,10 +12,10 @@ Point it at a KAPE dump, a Velociraptor collection, or a mounted disk image and 
 
 ## 🚀 Key Features
 
-- **Wide coverage** — 94 checks across Run keys, services, COM hijacking, scheduled tasks, WMI subscriptions, Office add-ins, IFEO injection, accessibility backdoors, startup folders, LSA packages, and more.
+- **Wide persistence coverage** — 114 checks across Run keys, services, COM hijacking, scheduled tasks, WMI subscriptions, Office add-ins, IFEO injection, accessibility backdoors, startup folders, LSA packages, and more.
 - **Signature-based filtering** — Validates Authenticode signatures to separate real persistence from OS defaults. No value-based whitelists that miss swapped binaries or DLL proxying.
 - **Custom detection profiles** — YAML-based allow and block rules, globally or per-check. Adapt the tool to your environment, not the other way around.
-- **Flexible output** — Console, CSV, and HTML. Adding new formats is straightforward.
+- **Flexible output** — Console, CSV, HTML, and XLSX. Adding new formats is straightforward.
 - **Extensible plugin system** — Adding a new persistence check is a single file. Most checks are declarative. Complex logic gets one method override.
 - **Finding enrichment** — Every finding is automatically enriched with file existence, SHA-256 hashes, signer information, and LOLBin classification.
 - **Speed** — Native registry parsing via libregf. Scans complete in roughly 10–30 seconds on heavily used systems.
@@ -71,7 +71,7 @@ docker run --rm -v /path/to/triage:/evidence:ro pyrsistencesniper /evidence --mi
 The `paths` argument is the root of your forensic collection — wherever the `Windows/` directory lives. KAPE output, Velociraptor collections, mounted E01s, raw directory copies. As long as the hives and filesystem artifacts are in their expected paths relative to the root, PyrsistenceSniper will find them.
 
 ```
-pyrsistencesniper [-h] [--hostname HOSTNAME] [--format {console,csv,html}]
+pyrsistencesniper [-h] [--hostname HOSTNAME] [--format {console,csv,html,xlsx}]
                   [--output OUTPUT] [--profile PROFILE]
                   [--technique TECHNIQUE ...] [--list-checks]
                   [--update-lolbins] [--min-severity {info,low,medium,high}]
@@ -80,7 +80,7 @@ pyrsistencesniper [-h] [--hostname HOSTNAME] [--format {console,csv,html}]
 
 | Flag | Description |
 |------|-------------|
-| `--format {console,csv,html}` | Output format (default: `console`) |
+| `--format {console,csv,html,xlsx}` | Output format (default: `console`) |
 | `--output FILE` | Write output to file instead of stdout |
 | `--profile FILE` | YAML detection profile for allow/block overrides |
 | `--technique ID [...]` | Filter by MITRE ATT&CK technique or check ID |
@@ -150,7 +150,7 @@ PyrsistenceSniper runs each finding through a multi-stage pipeline:
 2. **Resolution** — Findings are enriched with file existence, SHA-256 hash, Authenticode signer, LOLBin classification, and OS directory detection.
 3. **Severity classification** — Each finding is classified as `HIGH` (block rule match), `MEDIUM` (no rules match), `LOW` (partial allow match), or `INFO` (full allow match). The `--min-severity` flag controls the threshold (default: `medium`). Use `--min-severity info` to show everything. Plugins also reject invalid data (empty values, non-executable flags) unconditionally. In most environments this cuts output by 80–90%.
 4. **Enrichment** — Optional enrichment plugins can attach additional metadata before output.
-5. **Output** — Findings are rendered in the requested format (console, CSV, or HTML).
+5. **Output** — Findings are rendered in the requested format (console, CSV, HTML, or XLSX).
 
 Each finding carries:
 
@@ -167,25 +167,25 @@ Each finding carries:
 | `is_lolbin` | Whether the binary is a known LOLBin |
 | `exists` | Whether the referenced file exists on disk |
 
-Console output groups findings by MITRE technique and flags anomalies. CSV output includes all fields plus dynamic enrichment columns. HTML produces a standalone report suitable for client delivery.
+Console output groups findings by MITRE technique and flags anomalies. CSV and XLSX output include all fields plus dynamic enrichment columns. HTML produces a standalone report suitable for client delivery.
 
 ---
 
 ## 🛡️ Supported Checks
 
-94 persistence checks across 9 MITRE ATT&CK techniques. Run `pyrsistencesniper --list-checks` for a quick overview in the terminal.
+114 persistence checks across 9 MITRE ATT&CK techniques. Run `pyrsistencesniper --list-checks` for a quick overview in the terminal.
 
 | MITRE ID | Technique | Checks |
 |----------|-----------|--------|
 | T1037 | Boot/Logon Initialization Scripts | `gp_scripts`, `logon_scripts` |
 | T1053 | Scheduled Task/Job | `ghost_task`, `scheduled_task_files` |
 | T1098 | Account Manipulation | `rid_hijacking`, `rid_suborner` |
-| T1137 | Office Application Startup | `office_addins`, `office_ai_hijack`, `office_dll_override`, `office_templates`, `office_test_dll`, `vba_monitors` |
+| T1137 | Office Application Startup | `office_addins`, `office_ai_hijack`, `office_dll_override`, `office_templates`, `office_test_dll`, `outlook_home_page`, `vba_monitors` |
 | T1543 | Create or Modify System Process | `service_failure_command`, `windows_service_dll`, `windows_service_image_path` |
-| T1546 | Event Triggered Execution | `accessibility_tools`, `ae_debug`, `ae_debug_protected`, `amsi_providers`, `app_paths`, `appcert_dlls`, `appinit_dlls`, `assistive_technology`, `cmd_autorun`, `com_treat_as`, `disk_cleanup_handler`, `dotnet_dbg_managed_debugger`, `error_handler_cmd`, `explorer_clsid_hijack`, `ifeo_debugger`, `ifeo_delegated_ntdll`, `ifeo_silent_process_exit`, `lsm_debugger`, `netsh_helper`, `power_automate`, `powershell_profiles`, `screensaver`, `telemetry_controller`, `wer_debugger`, `wer_hangs`, `wer_reflect_debugger`, `wer_runtime_exception`, `windows_terminal`, `wmi_event_subscription` |
-| T1547 | Boot/Logon Autostart Execution | `active_setup`, `authentication_packages`, `boot_execute`, `boot_verification_program`, `dsrm_backdoor`, `explorer_app_key`, `explorer_bho`, `explorer_context_menu`, `explorer_load`, `platform_execute`, `rdp_clx_dll`, `rdp_virtual_channel`, `rdp_wds_startup`, `run_keys`, `s0_initial_command`, `scm_extension`, `security_packages`, `session_manager_execute`, `setup_execute`, `shell_folders_startup`, `shell_launcher`, `startup_folder`, `ts_initial_program`, `winlogon_mpnotify`, `winlogon_notify_packages`, `winlogon_shell`, `winlogon_userinit` |
-| T1556 | Modify Authentication Process | `lsa_password_filter` |
-| T1574 | Hijack Execution Flow | `autodial_dll`, `chm_helper_dll`, `cor_profiler`, `coreclr_profiler`, `crypto_expo_offload`, `diagtrack_dll`, `diagtrack_listener_dll`, `direct3d_dll`, `dotnet_startup_hooks`, `gp_extension_dlls`, `hhctrl_ocx_dll`, `known_managed_debugging_dlls`, `lsa_extensions`, `mapi32_dll_path`, `minidump_auxiliary_dlls`, `msdtc_xa_dll`, `nldp_dll`, `rdp_test_dvc_plugin`, `search_indexer_dll`, `server_level_plugin_dll`, `winsock_auto_proxy`, `wu_service_startup_dll` |
+| T1546 | Event Triggered Execution | `accessibility_tools`, `ae_debug`, `ae_debug_protected`, `amsi_providers`, `app_paths`, `appcert_dlls`, `appinit_dlls`, `assistive_technology`, `cmd_autorun`, `com_treat_as`, `disk_cleanup_handler`, `dotnet_dbg_managed_debugger`, `error_handler_cmd`, `explorer_clsid_hijack`, `file_association_hijack`, `ifeo_debugger`, `ifeo_delegated_ntdll`, `ifeo_silent_process_exit`, `lsm_debugger`, `netsh_helper`, `power_automate`, `powershell_profiles`, `protocol_handler_hijack`, `recycle_bin_com_extension`, `screensaver`, `search_protocol_handler`, `shared_task_scheduler`, `shell_execute_hooks`, `telemetry_controller`, `typelib_hijack`, `wer_debugger`, `wer_hangs`, `wer_reflect_debugger`, `wer_runtime_exception`, `windows_terminal`, `wmi_event_subscription` |
+| T1547 | Boot/Logon Autostart Execution | `active_setup`, `authentication_packages`, `boot_execute`, `boot_verification_program`, `dsrm_backdoor`, `explorer_app_key`, `explorer_bho`, `explorer_context_menu`, `explorer_load`, `font_drivers`, `lsa_cfg_flags`, `lsa_run_as_ppl`, `platform_execute`, `print_monitors`, `print_processors`, `rdp_clx_dll`, `rdp_virtual_channel`, `rdp_wds_startup`, `run_keys`, `run_services`, `run_services_once`, `s0_initial_command`, `scm_extension`, `security_packages`, `session_manager_execute`, `session_manager_subsystems`, `setup_execute`, `shell_folders_startup`, `shell_launcher`, `startup_folder`, `time_providers`, `ts_initial_program`, `winlogon_mpnotify`, `winlogon_notify_packages`, `winlogon_shell`, `winlogon_userinit` |
+| T1556 | Modify Authentication Process | `lsa_password_filter`, `network_provider_dll` |
+| T1574 | Hijack Execution Flow | `appdomain_manager`, `autodial_dll`, `chm_helper_dll`, `content_index_dll`, `cor_profiler`, `coreclr_profiler`, `crypto_expo_offload`, `diagtrack_dll`, `diagtrack_listener_dll`, `direct3d_dll`, `dotnet_framework_profiler`, `dotnet_startup_hooks`, `gp_extension_dlls`, `hhctrl_ocx_dll`, `known_dlls`, `known_managed_debugging_dlls`, `lsa_extensions`, `mapi32_dll_path`, `minidump_auxiliary_dlls`, `msdtc_xa_dll`, `nldp_dll`, `rdp_test_dvc_plugin`, `search_indexer_dll`, `server_level_plugin_dll`, `snmp_extension_agent`, `winsock_auto_proxy`, `wu_service_startup_dll` |
 
 ---
 
@@ -269,7 +269,7 @@ pyrsistencesniper/
     T1543/            # Services
     ...
   enrichment/         # Optional enrichment plugins
-  output/             # Console, CSV, HTML renderers
+  output/             # Console, CSV, HTML, XLSX renderers
   ui/                 # CLI presentation — banner, progress display
 ```
 
@@ -324,7 +324,6 @@ We kept writing one-off scripts to cover the gaps, and at some point it made mor
 - SCM security descriptors — analyze DACL ACEs for weakened service permissions
 - VirusTotal enrichment for discovered artifacts
 - Improved HTML reports with filtering and sorting
-- XLSX output format
 
 ---
 

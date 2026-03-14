@@ -43,6 +43,11 @@ class ScheduledTaskFiles(PersistencePlugin):
                 value_matches=r"Windows Defender",
                 not_lolbin=True,
             ),
+            FilterRule(
+                reason="Built-in Windows service control task",
+                value_matches=r"sc\.exe\s+(start|config)\s+\w+",
+                signer="microsoft",
+            ),
         ),
     )
 

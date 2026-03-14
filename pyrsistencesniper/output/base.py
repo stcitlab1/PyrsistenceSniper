@@ -7,6 +7,25 @@ from typing import IO, Any
 
 from pyrsistencesniper.models.finding import AnnotatedResult
 
+CORE_FIELDS: tuple[str, ...] = (
+    "path",
+    "value",
+    "technique",
+    "mitre_id",
+    "description",
+    "access_gained",
+    "severity",
+    "is_lolbin",
+    "exists",
+    "sha256",
+    "is_builtin",
+    "is_in_os_directory",
+    "signer",
+    "hostname",
+    "check_id",
+    "references",
+)
+
 
 class OutputBase(ABC):
     """Base class that all output renderers must extend."""
@@ -58,6 +77,21 @@ class OutputBase(ABC):
             for key, value in enrichment.data.items():
                 d[f"enrichment.{enrichment.provider}.{key}"] = value
         return d
+
+    @staticmethod
+    def _flatten_results(
+        results: list[AnnotatedResult],
+    ) -> tuple[list[dict[str, Any]], list[str]]:
+        """Convert results to flat dicts; return rows and fieldnames."""
+        rows: list[dict[str, Any]] = []
+        enrichment_keys: set[str] = set()
+        for result in results:
+            d = OutputBase.result_to_dict(result)
+            rows.append(d)
+            for key in d:
+                if key.startswith("enrichment."):
+                    enrichment_keys.add(key)
+        return rows, [*CORE_FIELDS, *sorted(enrichment_keys)]
 
     @staticmethod
     def build_flags(d: dict[str, Any]) -> str:

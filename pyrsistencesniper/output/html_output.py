@@ -28,35 +28,17 @@ _HTML_TEMPLATE = """\
 <table>
 <thead>
 <tr>
-  <th>Technique</th>
-  <th>MITRE ID</th>
-  <th>Check ID</th>
-  <th>Path</th>
-  <th>Value</th>
-  <th>Description</th>
-  <th>Access</th>
-  <th>Severity</th>
-  <th>SHA256</th>
-  <th>Signer</th>
-  <th>Flags</th>
-  <th>References</th>
+{% for field in fieldnames %}
+  <th>{{ field }}</th>
+{% endfor %}
 </tr>
 </thead>
 <tbody>
 {% for row in results %}
 <tr>
-  <td>{{ row.technique }}</td>
-  <td>{{ row.mitre_id }}</td>
-  <td>{{ row.check_id }}</td>
-  <td>{{ row.path }}</td>
-  <td>{{ row.value }}</td>
-  <td>{{ row.description }}</td>
-  <td>{{ row.access_gained }}</td>
-  <td>{{ row.severity }}</td>
-  <td>{{ row.sha256 }}</td>
-  <td>{{ row.signer }}</td>
-  <td>{{ row.flags }}</td>
-  <td>{{ row.references }}</td>
+{% for field in fieldnames %}
+  <td>{{ row[field] }}</td>
+{% endfor %}
 </tr>
 {% endfor %}
 </tbody>
@@ -72,11 +54,5 @@ class HtmlOutput(OutputBase):
     def _write(self, results: list[AnnotatedResult], out: IO[str]) -> None:
         env = Environment(autoescape=True)
         template = env.from_string(_HTML_TEMPLATE)
-
-        rows = []
-        for result in results:
-            d = self.result_to_dict(result)
-            d["flags"] = self.build_flags(d)
-            rows.append(d)
-
-        out.write(template.render(results=rows))
+        rows, fieldnames = self._flatten_results(results)
+        out.write(template.render(results=rows, fieldnames=fieldnames))

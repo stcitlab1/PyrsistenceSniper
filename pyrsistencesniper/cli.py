@@ -46,7 +46,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--format",
-        choices=["console", "csv", "html"],
+        choices=["console", "csv", "html", "xlsx"],
         default="console",
         help="Output format (default: console)",
     )
@@ -121,6 +121,10 @@ def main() -> None:
 def _run_scan(args: argparse.Namespace) -> None:
     """Build context, run the detection pipeline, and render output."""
     logger = logging.getLogger(__name__)
+
+    if args.format == "xlsx" and not args.output:
+        sys.stderr.write("Error: XLSX format requires --output <file>\n")
+        sys.exit(1)
 
     try:
         profile = (

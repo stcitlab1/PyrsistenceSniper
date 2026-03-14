@@ -30,6 +30,7 @@ class DiskCleanupHandler(PersistencePlugin):
             FilterRule(
                 reason="Built-in disk cleanup DLL",
                 value_matches=r"(ieframe|shell32|dataclen|setupcln)\.dll$",
+                signer="microsoft",
             ),
         ),
     )

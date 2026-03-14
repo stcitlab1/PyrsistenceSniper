@@ -28,37 +28,9 @@ class CsvOutput(OutputBase):
         if not results:
             return
 
-        fieldnames = [
-            "path",
-            "value",
-            "technique",
-            "mitre_id",
-            "description",
-            "access_gained",
-            "severity",
-            "is_lolbin",
-            "exists",
-            "sha256",
-            "is_builtin",
-            "is_in_os_directory",
-            "signer",
-            "hostname",
-            "check_id",
-            "references",
-        ]
-        # Gather dynamic enrichment column names across all rows
-        all_keys: set[str] = set()
-        rows: list[dict[str, str]] = []
-        for result in results:
-            d = self.result_to_dict(result)
-            sanitized = {k: _sanitize_cell(v) for k, v in d.items()}
-            rows.append(sanitized)
-            for key in d:
-                if key.startswith("enrichment."):
-                    all_keys.add(key)
-
-        fieldnames.extend(sorted(all_keys))
+        rows, fieldnames = self._flatten_results(results)
+        sanitized = [{k: _sanitize_cell(v) for k, v in row.items()} for row in rows]
         writer = csv.DictWriter(out, fieldnames=fieldnames, extrasaction="ignore")
         writer.writeheader()
-        for row in rows:
+        for row in sanitized:
             writer.writerow(row)

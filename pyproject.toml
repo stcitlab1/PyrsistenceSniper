@@ -1,6 +1,6 @@
 [project]
 name = "pyrsistencesniper"
-version = "0.3.0"
+version = "0.4.0"
 description = ""
 authors = [
     {name = "Maurice Fielenbach",email = "info@hexastrike.com"}
@@ -14,7 +14,8 @@ dependencies = [
     "httpx (>=0.28.0,<1.0.0)",
     "platformdirs (>=4.9.2,<5.0.0)",
     "rich (>=13.0,<15.0)",
-    "defusedxml (>=0.7.1,<1)"
+    "defusedxml (>=0.7.1,<1)",
+    "openpyxl (>=3.1.0,<4.0.0)"
 ]
 
 
@@ -86,6 +87,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "defusedxml.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "openpyxl.*"
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

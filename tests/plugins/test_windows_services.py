@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pyrsistencesniper.models.finding import AccessLevel
+from pyrsistencesniper.models.finding import AccessLevel, Finding, MatchResult
 from pyrsistencesniper.plugins.T1543.windows_services import (
     WindowsServiceDll,
     WindowsServiceImagePath,
@@ -94,3 +94,21 @@ class TestWindowsServiceDll:
         findings = plugin.run()
         assert len(findings) == 1
         assert "a.dll" in findings[0].value
+
+
+class TestMsiexecFilterRule:
+    """Tests for the msiexec value_matches + signer FilterRule (allow[3])."""
+
+    rule = WindowsServiceImagePath.definition.allow[3]
+
+    def test_msiexec_signed_full(self) -> None:
+        f = Finding(value=r"msiexec.exe /V", signer="Microsoft Windows")
+        assert self.rule.match_result(f) == MatchResult.FULL
+
+    def test_msiexec_unsigned_partial(self) -> None:
+        f = Finding(value=r"msiexec.exe /V", signer="")
+        assert self.rule.match_result(f) == MatchResult.PARTIAL
+
+    def test_evil_exe_none(self) -> None:
+        f = Finding(value=r"C:\evil.exe", signer="Microsoft Windows")
+        assert self.rule.match_result(f) == MatchResult.NONE

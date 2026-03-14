@@ -145,3 +145,33 @@ class ServiceControlManagerExtension(PersistencePlugin):
             ),
         ),
     )
+
+
+@register_plugin
+class SessionManagerSubSystems(PersistencePlugin):
+    definition = CheckDefinition(
+        id="session_manager_subsystems",
+        technique="Session Manager SubSystems",
+        mitre_id="T1547",
+        description=(
+            "The SubSystems\\Windows value specifies the Windows subsystem "
+            "server executable loaded by the Session Manager during boot. "
+            "The default value references csrss.exe. Any modification "
+            "indicates boot-level persistence."
+        ),
+        references=("https://attack.mitre.org/techniques/T1547/",),
+        targets=(
+            RegistryTarget(
+                path=r"SYSTEM\{controlset}\Control\Session Manager\SubSystems",
+                values="Windows",
+                scope=HiveScope.HKLM,
+            ),
+        ),
+        allow=(
+            FilterRule(
+                reason="Default Windows subsystem configuration",
+                value_matches=r"csrss\.exe",
+                signer="microsoft",
+            ),
+        ),
+    )

@@ -59,3 +59,59 @@ class SecurityPackages(PersistencePlugin):
             ),
         ),
     )
+
+
+@register_plugin
+class LsaRunAsPPL(PersistencePlugin):
+    definition = CheckDefinition(
+        id="lsa_run_as_ppl",
+        technique="LSASS PPL Protection Status",
+        mitre_id="T1547.008",
+        description=(
+            "RunAsPPL controls whether LSASS runs as a Protected Process "
+            "Light. When set to 0 or absent, LSA protection is disabled, "
+            "weakening credential protection. Value 1 enables protection."
+        ),
+        references=("https://attack.mitre.org/techniques/T1547/008/",),
+        targets=(
+            RegistryTarget(
+                path=r"SYSTEM\{controlset}\Control\Lsa",
+                values="RunAsPPL",
+                scope=HiveScope.HKLM,
+            ),
+        ),
+        allow=(
+            FilterRule(
+                reason="LSA protection enabled",
+                value_matches=r"^[12]$",
+            ),
+        ),
+    )
+
+
+@register_plugin
+class LsaCfgFlags(PersistencePlugin):
+    definition = CheckDefinition(
+        id="lsa_cfg_flags",
+        technique="Credential Guard Configuration",
+        mitre_id="T1547.008",
+        description=(
+            "LsaCfgFlags controls Credential Guard. Value 0 disables it, "
+            "1 enables with UEFI lock, 2 enables without lock. Disabling "
+            "Credential Guard weakens credential isolation."
+        ),
+        references=("https://attack.mitre.org/techniques/T1547/008/",),
+        targets=(
+            RegistryTarget(
+                path=r"SYSTEM\{controlset}\Control\Lsa",
+                values="LsaCfgFlags",
+                scope=HiveScope.HKLM,
+            ),
+        ),
+        allow=(
+            FilterRule(
+                reason="Credential Guard enabled",
+                value_matches=r"^[12]$",
+            ),
+        ),
+    )

@@ -34,6 +34,7 @@ class ExplorerContextMenu(PersistencePlugin):
             FilterRule(
                 reason="Built-in shell extension DLL",
                 value_matches=r"(shell32|ieframe)\.dll$",
+                signer="microsoft",
             ),
         ),
     )

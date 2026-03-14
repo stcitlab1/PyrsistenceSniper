@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from pyrsistencesniper.models.finding import Finding, MatchResult
 from pyrsistencesniper.plugins.T1053.scheduled_tasks import ScheduledTaskFiles
 
 if TYPE_CHECKING:
@@ -58,3 +59,25 @@ def test_nested_task_directory(tmp_path: Path) -> None:
     assert len(findings) == 1
     assert findings[0].value == "defrag.exe"
     assert "Microsoft\\Windows\\Defrag" in findings[0].path
+
+
+class TestScExeFilterRule:
+    """Tests for the sc.exe value_matches + signer FilterRule (allow[2])."""
+
+    rule = ScheduledTaskFiles.definition.allow[2]
+
+    def test_sc_start_signed_full(self) -> None:
+        f = Finding(value="sc.exe start wuauserv", signer="Microsoft Windows")
+        assert self.rule.match_result(f) == MatchResult.FULL
+
+    def test_sc_start_unsigned_partial(self) -> None:
+        f = Finding(value="sc.exe start wuauserv", signer="")
+        assert self.rule.match_result(f) == MatchResult.PARTIAL
+
+    def test_sc_config_matches(self) -> None:
+        f = Finding(value="sc.exe config trustedinstaller", signer="Microsoft Windows")
+        assert self.rule.match_result(f) == MatchResult.FULL
+
+    def test_sc_delete_none(self) -> None:
+        f = Finding(value="sc.exe delete svc", signer="Microsoft Windows")
+        assert self.rule.match_result(f) == MatchResult.NONE

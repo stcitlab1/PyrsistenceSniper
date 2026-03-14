@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import io
 
+import pytest
+from openpyxl import load_workbook
 from pyrsistencesniper.models.finding import AccessLevel, Enrichment, Finding
 from pyrsistencesniper.output.csv_output import CsvOutput, _sanitize_cell
 from pyrsistencesniper.output.html_output import HtmlOutput
+from pyrsistencesniper.output.xlsx_output import XlsxOutput
 
 # -- CSV formula injection tests -----------------------------------------------
 
@@ -103,3 +106,63 @@ def test_csv_output_sanitizes_all_fields() -> None:
     renderer._write([result], out)
     csv_text = out.getvalue()
     assert "'=HYPERLINK()" in csv_text
+
+
+# -- XLSX output tests ---------------------------------------------------------
+
+
+def test_xlsx_produces_valid_workbook() -> None:
+    """render() should produce a valid XLSX with correct headers and data."""
+    result = _make_result(value="malware.exe")
+    buf = io.BytesIO()
+    XlsxOutput().render([result], output=buf)
+    buf.seek(0)
+    wb = load_workbook(buf)
+    ws = wb.active
+    headers = [cell.value for cell in ws[1]]
+    assert "path" in headers
+    assert "value" in headers
+    assert ws.cell(row=2, column=headers.index("value") + 1).value == "malware.exe"
+
+
+def test_xlsx_raises_without_output() -> None:
+    """render() must raise ValueError when output is None."""
+    with pytest.raises(ValueError, match="requires a file path"):
+        XlsxOutput().render([_make_result()])
+
+
+def test_xlsx_enrichment_columns() -> None:
+    """Dynamic enrichment columns should appear in the header."""
+    finding = Finding(
+        path="HKLM\\Run",
+        value="test.exe",
+        technique="Test",
+        mitre_id="T0000",
+        description="d",
+        access_gained=AccessLevel.SYSTEM,
+        hostname="HOST",
+        check_id="test_check",
+    )
+    enrichment = Enrichment(provider="vt", data={"score": "5/70"})
+    result = (finding, (enrichment,))
+    buf = io.BytesIO()
+    XlsxOutput().render([result], output=buf)
+    buf.seek(0)
+    wb = load_workbook(buf)
+    ws = wb.active
+    headers = [cell.value for cell in ws[1]]
+    assert "enrichment.vt.score" in headers
+    assert (
+        ws.cell(row=2, column=headers.index("enrichment.vt.score") + 1).value == "5/70"
+    )
+
+
+def test_xlsx_empty_results() -> None:
+    """Empty results should produce a workbook with only a header row."""
+    buf = io.BytesIO()
+    XlsxOutput().render([], output=buf)
+    buf.seek(0)
+    wb = load_workbook(buf)
+    ws = wb.active
+    assert ws.cell(row=1, column=1).value == "path"
+    assert ws.cell(row=2, column=1).value is None

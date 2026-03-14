@@ -2,12 +2,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from pyrsistencesniper.models.finding import Finding, MatchResult
 from pyrsistencesniper.plugins.T1547.boot_execute import (
     BootExecute,
     PlatformExecute,
     S0InitialCommand,
     ServiceControlManagerExtension,
     SessionManagerExecute,
+    SessionManagerSubSystems,
     SetupExecute,
 )
 
@@ -71,3 +73,43 @@ def test_scm_extension_happy(tmp_path: Path) -> None:
     findings = plugin.run()
     assert len(findings) >= 1
     assert "evil.dll" in findings[0].value
+
+
+def test_session_manager_subsystems_happy(tmp_path: Path) -> None:
+    node = make_node(values={"Windows": r"%SystemRoot%\system32\evil.exe"})
+    plugin = make_plugin(SessionManagerSubSystems, tmp_path)
+    setup_hklm(plugin, node, hive_path=_SYSTEM_HIVE)
+    findings = plugin.run()
+    assert len(findings) >= 1
+    assert "evil.exe" in findings[0].value
+
+
+def test_session_manager_subsystems_empty(tmp_path: Path) -> None:
+    node = make_node()
+    plugin = make_plugin(SessionManagerSubSystems, tmp_path)
+    setup_hklm(plugin, node, hive_path=_SYSTEM_HIVE)
+    assert plugin.run() == []
+
+
+class TestSubSystemsFilterRule:
+    """Tests for the fixed csrss.exe value_matches + signer FilterRule (allow[0])."""
+
+    rule = SessionManagerSubSystems.definition.allow[0]
+
+    def test_csrss_signed_full(self) -> None:
+        f = Finding(
+            value=r"%SystemRoot%\system32\csrss.exe ObjectDirectory=\Windows",
+            signer="Microsoft Windows",
+        )
+        assert self.rule.match_result(f) == MatchResult.FULL
+
+    def test_csrss_unsigned_partial(self) -> None:
+        f = Finding(
+            value=r"%SystemRoot%\system32\csrss.exe ObjectDirectory=\Windows",
+            signer="",
+        )
+        assert self.rule.match_result(f) == MatchResult.PARTIAL
+
+    def test_evil_exe_none(self) -> None:
+        f = Finding(value=r"%SystemRoot%\system32\evil.exe", signer="Microsoft Windows")
+        assert self.rule.match_result(f) == MatchResult.NONE
